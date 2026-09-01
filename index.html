@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
+<title>Котосвіт</title>
+<style>
+:root{--ink:#f4ead8;--mute:#cbbba0;--gold:#e8b86d}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#07060c;color:var(--ink);font-family:Georgia,"Palatino Linotype",serif;overflow:hidden}
+.app{height:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;position:relative}
+.sky{flex:1;position:relative;overflow:hidden}
+.world{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 42%}
+.vignette{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,6,12,.15),transparent 28%,transparent 58%,rgba(7,6,12,.88));pointer-events:none}
+.float{position:absolute;left:16px;right:16px;top:calc(14px + env(safe-area-inset-top));display:flex;justify-content:space-between;z-index:3}
+.chip{background:rgba(18,12,8,.55);backdrop-filter:blur(10px);border:1px solid rgba(232,184,109,.28);border-radius:999px;padding:8px 12px;font-size:13px}
+.speech{position:absolute;left:18px;right:18px;bottom:16%;z-index:3;background:rgba(20,13,9,.72);border:1px solid rgba(232,184,109,.25);border-radius:20px 20px 20px 8px;padding:12px 14px;backdrop-filter:blur(12px)}
+.speech b{display:block;color:var(--gold);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.speech p{margin:4px 0 0;font-size:16px;line-height:1.35}
+.panel{background:linear-gradient(180deg,#1c140e,#120d0a);padding:14px 16px calc(16px + env(safe-area-inset-bottom));border-top:1px solid rgba(232,184,109,.2)}
+.btn{width:100%;border:0;border-radius:16px;padding:15px;font-size:16px;font-weight:700;font-family:inherit;background:linear-gradient(135deg,#e8b86d,#c4843a);color:#2a190c}
+.bar{height:8px;border-radius:99px;background:#2a2018;margin:10px 0 12px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#e8b86d,#fff1c8);transition:width .2s}
+.tiny{color:var(--mute);font-size:12px;text-align:center}
+.cast{display:flex;gap:8px;margin-top:10px}
+.who{min-width:72px;text-align:center;font-size:11px;color:var(--mute)}
+.who img{width:72px;height:72px;object-fit:cover;border-radius:18px;border:1px solid rgba(232,184,109,.25);filter:grayscale(.35)}
+.who.on img{filter:none;box-shadow:0 0 0 2px #e8b86d}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sky">
+    <img class="world" alt="Планета Котосвіт" src="./assets/planet.jpg"/>
+    <div class="vignette"></div>
+    <div class="float">
+      <div class="chip" id="pop">коти 1</div>
+      <div class="chip" id="bld">будівлі 0</div>
+    </div>
+    <div class="speech"><b id="who">Мурко</b><p id="line">Тут тихо. Мені потрібен дім.</p></div>
+  </div>
+  <div class="panel">
+    <div class="bar"><i id="p"></i></div>
+    <button class="btn" id="act">Допомогти з хатою</button>
+    <div class="tiny" id="hint">кожен тап — ще один брус</div>
+    <div class="cast">
+      <div class="who on" id="w0"><img src="./assets/cats.jpg" style="object-position:18% 28%" alt="Мурко"/><div>Мурко</div></div>
+      <div class="who" id="w1"><img src="./assets/cats.jpg" style="object-position:78% 22%" alt="Луна"/><div>Луна</div></div>
+      <div class="who" id="w2"><img src="./assets/cats.jpg" style="object-position:18% 82%" alt="Сем"/><div>Сем</div></div>
+      <div class="who" id="w3"><img src="./assets/cats.jpg" style="object-position:78% 82%" alt="Віктор"/><div>Віктор</div></div>
+    </div>
+  </div>
+</div>
+<script>
+const STAGES=[
+  {who:"Мурко",line:"Тут тихо. Мені потрібен дім.",btn:"Допомогти з хатою",need:8,pop:1,bld:0,hint:"кожен тап — ще один брус"},
+  {who:"Мурко",line:"Дах тримається. Вже пахне деревом.",btn:"Добити хату",need:6,pop:1,bld:0,hint:"ще трохи"},
+  {who:"Мурко",line:"Дім стоїть. Але одному тут порожньо.",btn:"Покликати когось",need:1,pop:1,bld:1,hint:"хтось уже йде стежкою"},
+  {who:"Луна",line:"Я Луна. Можна лишитись біля вогню?",btn:"Прийняти Луну",need:1,pop:1,bld:1,hint:""},
+  {who:"Луна",line:"Якщо буде сім'я — з'являться і вулиці.",btn:"Почекати весну",need:5,pop:2,bld:1,hint:"ніч коротшає з кожним тапом"},
+  {who:"Кошенята",line:"Двоє. Вони ще не знають, ким стануть.",btn:"Дати імена",need:1,pop:4,bld:1,hint:""},
+  {who:"Сем",line:"Я Сем. Мені сниться кава і розмови.",btn:"Відвести місце під кав'ярню",need:7,pop:4,bld:1,hint:"камінь, навіс, перша чашка"},
+  {who:"Віктор",line:"Я Віктор. Планеті потрібне кіно.",btn:"Засвітити вивіску",need:7,pop:4,bld:2,hint:"теплий екран у темряві"},
+  {who:"Котосвіт",line:"Хати, кав'ярня, кіно. Цивілізація почалась.",btn:"Почати спочатку",need:1,pop:4,bld:3,hint:"це був перший шар світу"}
+];
+let i=+localStorage.kotoStep||0,t=0;
+const $=s=>document.querySelector(s);
+function paint(){
+  const s=STAGES[Math.min(i,STAGES.length-1)];
+  $("#who").textContent=s.who;
+  $("#line").textContent=s.line;
+  $("#act").textContent=s.btn;
+  $("#hint").textContent=s.hint;
+  $("#pop").textContent="коти "+s.pop;
+  $("#bld").textContent="будівлі "+s.bld;
+  $("#p").style.width=(t/s.need*100)+"%";
+  $("#w1").classList.toggle("on",s.pop>=2);
+  $("#w2").classList.toggle("on",i>=6);
+  $("#w3").classList.toggle("on",i>=7);
+}
+$("#act").onclick=()=>{
+  const s=STAGES[Math.min(i,STAGES.length-1)];
+  t++;
+  if(t>=s.need){
+    if(i>=STAGES.length-1){i=0;t=0;localStorage.kotoStep=0;paint();return;}
+    i++;t=0;localStorage.kotoStep=i;
+  }
+  paint();
+};
+paint();
+</script>
+</body>
+</html>
