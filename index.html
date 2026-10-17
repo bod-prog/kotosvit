@@ -9,85 +9,581 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:#07060c;color:var(--ink);font-family:Georgia,"Palatino Linotype",serif;overflow:hidden}
 .app{height:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;position:relative}
-.sky{flex:1;position:relative;overflow:hidden}
-.world{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 42%}
-.vignette{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,6,12,.15),transparent 28%,transparent 58%,rgba(7,6,12,.88));pointer-events:none}
-.float{position:absolute;left:16px;right:16px;top:calc(14px + env(safe-area-inset-top));display:flex;justify-content:space-between;z-index:3}
-.chip{background:rgba(18,12,8,.55);backdrop-filter:blur(10px);border:1px solid rgba(232,184,109,.28);border-radius:999px;padding:8px 12px;font-size:13px}
-.speech{position:absolute;left:18px;right:18px;bottom:16%;z-index:3;background:rgba(20,13,9,.72);border:1px solid rgba(232,184,109,.25);border-radius:20px 20px 20px 8px;padding:12px 14px;backdrop-filter:blur(12px)}
+.sky{flex:1;position:relative;overflow:hidden;min-height:0}
+canvas.world{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+canvas.world.drag{cursor:grabbing}
+.vignette{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,6,12,.25),transparent 26%,transparent 62%,rgba(7,6,12,.85));pointer-events:none}
+.float{position:absolute;left:14px;right:14px;top:calc(12px + env(safe-area-inset-top));display:flex;gap:6px;z-index:3;align-items:center}
+.chip{background:rgba(18,12,8,.58);backdrop-filter:blur(10px);border:1px solid rgba(232,184,109,.28);border-radius:999px;padding:7px 11px;font-size:13px;color:var(--ink);font-family:inherit;white-space:nowrap}
+.chip.fish{color:#9fd3ff;border-color:rgba(120,190,255,.35)}
+.chip.reset{margin-left:auto;cursor:pointer;padding:6px 10px}
+.hidden{display:none!important}
+.speech{position:absolute;left:16px;right:16px;bottom:14px;z-index:3;background:rgba(20,13,9,.74);border:1px solid rgba(232,184,109,.25);border-radius:20px 20px 20px 8px;padding:11px 14px;backdrop-filter:blur(12px);transition:opacity .3s}
 .speech b{display:block;color:var(--gold);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
-.speech p{margin:4px 0 0;font-size:16px;line-height:1.35}
-.panel{background:linear-gradient(180deg,#1c140e,#120d0a);padding:14px 16px calc(16px + env(safe-area-inset-bottom));border-top:1px solid rgba(232,184,109,.2)}
-.btn{width:100%;border:0;border-radius:16px;padding:15px;font-size:16px;font-weight:700;font-family:inherit;background:linear-gradient(135deg,#e8b86d,#c4843a);color:#2a190c}
-.bar{height:8px;border-radius:99px;background:#2a2018;margin:10px 0 12px;overflow:hidden}
+.speech p{margin:3px 0 0;font-size:15px;line-height:1.35}
+.toast{position:absolute;left:50%;top:calc(58px + env(safe-area-inset-top));transform:translateX(-50%);z-index:4;background:rgba(232,184,109,.92);color:#2a190c;font-size:13px;padding:7px 14px;border-radius:999px;opacity:0;transition:opacity .35s;pointer-events:none;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis}
+.toast.show{opacity:1}
+.panel{background:linear-gradient(180deg,#1c140e,#120d0a);padding:12px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid rgba(232,184,109,.2)}
+.btn{width:100%;border:0;border-radius:16px;padding:14px;font-size:16px;font-weight:700;font-family:inherit;background:linear-gradient(135deg,#e8b86d,#c4843a);color:#2a190c;cursor:pointer;transition:transform .08s}
+.btn:active{transform:scale(.98)}
+.bar{height:8px;border-radius:99px;background:#2a2018;margin:4px 0 12px;overflow:hidden}
 .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#e8b86d,#fff1c8);transition:width .2s}
-.tiny{color:var(--mute);font-size:12px;text-align:center}
-.cast{display:flex;gap:8px;margin-top:10px}
-.who{min-width:72px;text-align:center;font-size:11px;color:var(--mute)}
-.who img{width:72px;height:72px;object-fit:cover;border-radius:18px;border:1px solid rgba(232,184,109,.25);filter:grayscale(.35)}
-.who.on img{filter:none;box-shadow:0 0 0 2px #e8b86d}
+.tiny{color:var(--mute);font-size:12px;text-align:center;min-height:16px;margin-top:8px}
+.rate{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--mute);margin-bottom:8px}
+.rate b{color:#9fd3ff;font-size:14px}
+.shop{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;scrollbar-width:none}
+.shop::-webkit-scrollbar{display:none}
+.card{flex:0 0 132px;background:rgba(232,184,109,.06);border:1px solid rgba(232,184,109,.22);border-radius:14px;padding:9px 10px;cursor:pointer;transition:border-color .15s,background .15s;font-family:inherit;color:var(--ink);text-align:left}
+.card:disabled{opacity:.45;cursor:default}
+.card.ok{border-color:#e8b86d;background:rgba(232,184,109,.14)}
+.card.done{border-color:rgba(159,211,255,.4);opacity:.75;cursor:default}
+.card .n{font-size:13px;font-weight:700;display:block}
+.card .r{font-size:11px;color:var(--mute);display:block;margin-top:2px;min-height:14px}
+.card .c{font-size:12px;color:#9fd3ff;display:block;margin-top:5px}
+.cast{display:flex;gap:8px;margin-top:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.cast::-webkit-scrollbar{display:none}
+.who{flex:0 0 64px;text-align:center;font-size:11px;color:var(--mute)}
+.who canvas{width:64px;height:64px;border-radius:16px;border:1px solid rgba(232,184,109,.25);background:#1a120c;display:block;filter:grayscale(1) brightness(.45)}
+.who.on canvas{filter:none;box-shadow:0 0 0 2px #e8b86d}
+.who.on{color:var(--ink)}
 </style>
 </head>
 <body>
 <div class="app">
   <div class="sky">
-    <img class="world" alt="Планета Котосвіт" src="./assets/planet.jpg"/>
+    <canvas class="world" id="cv" aria-label="Планета Котосвіт"></canvas>
     <div class="vignette"></div>
     <div class="float">
       <div class="chip" id="pop">коти 1</div>
       <div class="chip" id="bld">будівлі 0</div>
+      <div class="chip fish hidden" id="fishc">🐟 0</div>
+      <button class="chip reset" id="reset" title="Почати спочатку">⟲</button>
     </div>
+    <div class="toast" id="toast"></div>
     <div class="speech"><b id="who">Мурко</b><p id="line">Тут тихо. Мені потрібен дім.</p></div>
   </div>
   <div class="panel">
-    <div class="bar"><i id="p"></i></div>
-    <button class="btn" id="act">Допомогти з хатою</button>
-    <div class="tiny" id="hint">кожен тап — ще один брус</div>
-    <div class="cast">
-      <div class="who on" id="w0"><img src="./assets/cats.jpg" style="object-position:18% 28%" alt="Мурко"/><div>Мурко</div></div>
-      <div class="who" id="w1"><img src="./assets/cats.jpg" style="object-position:78% 22%" alt="Луна"/><div>Луна</div></div>
-      <div class="who" id="w2"><img src="./assets/cats.jpg" style="object-position:18% 82%" alt="Сем"/><div>Сем</div></div>
-      <div class="who" id="w3"><img src="./assets/cats.jpg" style="object-position:78% 82%" alt="Віктор"/><div>Віктор</div></div>
+    <div id="story">
+      <div class="bar"><i id="p"></i></div>
+      <button class="btn" id="act">Допомогти з хатою</button>
+      <div class="tiny" id="hint">кожен тап — ще один брус</div>
     </div>
+    <div id="build" class="hidden">
+      <div class="rate"><span>коти ловлять <b id="rate">0</b> 🐟/с</span><span id="next"></span></div>
+      <div class="shop" id="shop"></div>
+      <button class="btn" id="fishbtn">Закинути вудку</button>
+      <div class="tiny">торкнись кота — він замуркоче і поділиться рибкою</div>
+    </div>
+    <div class="cast" id="cast"></div>
   </div>
 </div>
 <script>
-const STAGES=[
-  {who:"Мурко",line:"Тут тихо. Мені потрібен дім.",btn:"Допомогти з хатою",need:8,pop:1,bld:0,hint:"кожен тап — ще один брус"},
-  {who:"Мурко",line:"Дах тримається. Вже пахне деревом.",btn:"Добити хату",need:6,pop:1,bld:0,hint:"ще трохи"},
-  {who:"Мурко",line:"Дім стоїть. Але одному тут порожньо.",btn:"Покликати когось",need:1,pop:1,bld:1,hint:"хтось уже йде стежкою"},
-  {who:"Луна",line:"Я Луна. Можна лишитись біля вогню?",btn:"Прийняти Луну",need:1,pop:1,bld:1,hint:""},
-  {who:"Луна",line:"Якщо буде сім'я — з'являться і вулиці.",btn:"Почекати весну",need:5,pop:2,bld:1,hint:"ніч коротшає з кожним тапом"},
-  {who:"Кошенята",line:"Двоє. Вони ще не знають, ким стануть.",btn:"Дати імена",need:1,pop:4,bld:1,hint:""},
-  {who:"Сем",line:"Я Сем. Мені сниться кава і розмови.",btn:"Відвести місце під кав'ярню",need:7,pop:4,bld:1,hint:"камінь, навіс, перша чашка"},
-  {who:"Віктор",line:"Я Віктор. Планеті потрібне кіно.",btn:"Засвітити вивіску",need:7,pop:4,bld:2,hint:"теплий екран у темряві"},
-  {who:"Котосвіт",line:"Хати, кав'ярня, кіно. Цивілізація почалась.",btn:"Почати спочатку",need:1,pop:4,bld:3,hint:"це був перший шар світу"}
-];
-let i=+localStorage.kotoStep||0,t=0;
+"use strict";
+const TAU=Math.PI*2, D2R=Math.PI/180;
 const $=s=>document.querySelector(s);
-function paint(){
-  const s=STAGES[Math.min(i,STAGES.length-1)];
-  $("#who").textContent=s.who;
-  $("#line").textContent=s.line;
-  $("#act").textContent=s.btn;
-  $("#hint").textContent=s.hint;
-  $("#pop").textContent="коти "+s.pop;
-  $("#bld").textContent="будівлі "+s.bld;
-  $("#p").style.width=(t/s.need*100)+"%";
-  $("#w1").classList.toggle("on",s.pop>=2);
-  $("#w2").classList.toggle("on",i>=6);
-  $("#w3").classList.toggle("on",i>=7);
-}
-$("#act").onclick=()=>{
-  const s=STAGES[Math.min(i,STAGES.length-1)];
-  t++;
-  if(t>=s.need){
-    if(i>=STAGES.length-1){i=0;t=0;localStorage.kotoStep=0;paint();return;}
-    i++;t=0;localStorage.kotoStep=i;
-  }
-  paint();
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const wrap=d=>((d+540)%360)-180;
+
+/* ---------- мешканці ---------- */
+const CATS={
+  murko:{name:"Мурко",role:"будівничий",fur:"#d9924a",belly:"#f6e3c6",eye:"#7cc46a",home:0,
+    lines:["Дах не тече. Я перевіряв двічі.","Колись тут був лише камінь і вітер.","Дім — це коли є кому відчинити."]},
+  luna:{name:"Луна",role:"берегиня вогню",fur:"#8e8aa6",belly:"#e8e4f2",eye:"#f1c86a",home:14,
+    lines:["Вогонь любить, коли з ним розмовляють.","Весна прийшла, бо ми чекали її разом.","Кошенята сплять. Нарешті."]},
+  puh:{name:"Пух",role:"кошеня",fur:"#f0d9b5",belly:"#fff8ee",eye:"#6aa9e0",home:6,kitten:true,
+    lines:["Коли виросту, я буду... ще не знаю ким!","Дивись, я зловив сонячний зайчик!"]},
+  tin:{name:"Тінь",role:"кошеня",fur:"#3b3744",belly:"#7d7890",eye:"#f1c86a",home:-8,kitten:true,
+    lines:["Тсс. Я вистежую тінь.","Уночі зірки ближче. Я перевіряла."]},
+  sem:{name:"Сем",role:"бариста",fur:"#5b4636",belly:"#c9a27a",eye:"#a8d86a",home:-30,
+    lines:["Перша чашка — завжди для гостя.","Кава смачніша, коли дощ стукає по навісу.","Віктор винен мені три еспресо."]},
+  viktor:{name:"Віктор",role:"кіномеханік",fur:"#2b2b33",belly:"#f4f4f4",eye:"#e0b05a",home:30,
+    lines:["Сьогодні на екрані — захід сонця. Безкоштовно.","Світло в залі гасне, і світ стає ширшим.","Кіно — це коли всі мовчать разом."]},
+  taras:{name:"Тарас",role:"рибалка",fur:"#c7c2b8",belly:"#f3efe8",eye:"#5f9fd6",home:-62,
+    lines:["Риба йде на тишу, а не на наживку.","Хвилі тут маленькі, але справжні.","Пірс скрипить — значить живий."]},
+  zorya:{name:"Зоря",role:"садівниця",fur:"#e2a24a",belly:"#fff0d0",eye:"#5fb36a",home:62,
+    hello:"Я Зоря. Тут земля тепла — буде город.",
+    lines:["М'ята пішла. Валер'яна — поки секрет.","Город слухає, якщо говорити пошепки."]},
+  oskar:{name:"Оскар",role:"книжник",fur:"#7a5c48",belly:"#d8c2a8",eye:"#7cc46a",home:-96,
+    hello:"Я Оскар. Місту потрібні історії, що не зникають.",
+    lines:["Книжка про далекі планети. Виявилось — про нас.","Тиша в бібліотеці — найголосніша."]},
+  marta:{name:"Марта",role:"доглядачка маяка",fur:"#b35c3d",belly:"#f6dcc8",eye:"#f1c86a",home:100,
+    hello:"Я Марта. Хтось має світити тим, хто повертається.",
+    lines:["Маяк світить не кораблям. Він світить тим, хто вертається.","Уночі я рахую хвилі замість овець."]},
+  mila:{name:"Міла",role:"астрономка",fur:"#f2f2f2",belly:"#ffffff",eye:"#6aa9e0",home:140,
+    hello:"Я Міла. Хочу знати, що там, за небом.",
+    lines:["Я бачила планету, де коти ще не мріють.","Зірки не падають. Вони просто спускаються подивитись."]},
+  barsyk:{name:"Барсик",role:"мер",fur:"#6e6e74",belly:"#d8d8dc",eye:"#e0b05a",home:-150,
+    hello:"Я Барсик. Коли котів багато — потрібне місце, де всі вирішують разом.",
+    lines:["Перший указ: пообідня дрімота обов'язкова.","Ратуша — це просто велика хата для всіх."]}
 };
+const ORDER=Object.keys(CATS);
+
+/* ---------- будівлі ---------- */
+const BUILD={
+  house:{name:"Хата Мурка",ang:0,h:76},
+  fire:{name:"Вогнище",ang:14,h:22},
+  cafe:{name:"Кав'ярня Сема",ang:-30,h:70},
+  cinema:{name:"Кіно Віктора",ang:30,h:84},
+  pier:{name:"Пірс Тараса",ang:-62,h:26,custom:true},
+  garden:{name:"Город",ang:62,h:34,cost:25,rate:1,cat:"zorya",custom:true},
+  library:{name:"Бібліотека",ang:-96,h:76,cost:80,rate:2,cat:"oskar"},
+  lighthouse:{name:"Маяк",ang:100,h:118,cost:220,rate:4,cat:"marta"},
+  observatory:{name:"Обсерваторія",ang:140,h:86,cost:600,rate:8,cat:"mila"},
+  hall:{name:"Ратуша",ang:-150,h:96,cost:1500,rate:15,cat:"barsyk"}
+};
+const SHOP=["garden","library","lighthouse","observatory","hall"];
+const TREES=[[-16,1,.9],[44,0,1],[-46,0,.8],[78,1,1.1],[-78,0,.9],[118,0,.8],[-116,1,1],[160,1,.9],[-170,0,1],[185,1,.8],[-135,1,.7],[22,0,.6]];
+const FLOWERS=[-22,8,38,-38,52,-52,70,-84,90,-110];
+const FINALE="Хати, кав'ярня, кіно, пірс, город, бібліотека, маяк, обсерваторія, ратуша. Котосвіт живе своїм життям — і радий, що ти поруч.";
+
+/* ---------- сюжет ---------- */
+const STAGES=[
+  {who:"murko",line:"Тут тихо. Мені потрібен дім.",btn:"Допомогти з хатою",need:8,hint:"кожен тап — ще один брус",build:"house",to:.55},
+  {who:"murko",line:"Дах тримається. Вже пахне деревом.",btn:"Добити хату",need:6,hint:"ще трохи",build:"house",from:.55,to:1},
+  {who:"murko",line:"Дім стоїть. Але одному тут порожньо.",btn:"Покликати когось",need:1,hint:"хтось уже йде стежкою"},
+  {who:"luna",line:"Я Луна. Можна лишитись біля вогню?",btn:"Прийняти Луну",need:1,hint:""},
+  {who:"luna",line:"Якщо буде сім'я — з'являться і вулиці.",btn:"Почекати весну",need:5,hint:"ніч коротшає з кожним тапом"},
+  {who:"kits",line:"Двоє. Вони ще не знають, ким стануть.",btn:"Дати імена",need:1,hint:""},
+  {who:"sem",line:"Я Сем. Мені сниться кава і розмови.",btn:"Відвести місце під кав'ярню",need:7,hint:"камінь, навіс, перша чашка",build:"cafe",to:1},
+  {who:"viktor",line:"Я Віктор. Планеті потрібне кіно.",btn:"Засвітити вивіску",need:7,hint:"теплий екран у темряві",build:"cinema",to:1},
+  {who:"world",line:"Хати, кав'ярня, кіно. Цивілізація почалась.",btn:"Це лише перший шар",need:1,hint:"планету можна крутити пальцем"},
+  {who:"taras",line:"Я Тарас. Чую — під берегом плескає риба.",btn:"Збити пірс",need:6,hint:"дошка за дошкою над водою",build:"pier",to:1},
+  {who:"taras",line:"Рибки — наша валюта. Коти ловлять самі, а ти вирішуєш, що будувати.",btn:"Домовились",need:1,hint:""}
+];
+const BUILD_MODE=STAGES.length;
+
+/* ---------- стан ---------- */
+const KEY="kotosvit";
+let S=load();
+function fresh(){return {step:0,t:0,fish:0,owned:[],clock:.32,seen:Date.now(),petted:0}}
+function load(){
+  try{const j=JSON.parse(localStorage.getItem(KEY));if(j&&typeof j.step==="number")return Object.assign(fresh(),j);}catch(e){}
+  const old=+localStorage.kotoStep; // сумісність з першою версією
+  const s=fresh(); if(old>0)s.step=Math.min(old,8); return s;
+}
+let saveAt=0, allowSave=true;
+function save(now){if(!allowSave)return;S.seen=Date.now();localStorage.setItem(KEY,JSON.stringify(S));saveAt=now||0;}
+
+const prog={};          // прогрес кожної будівлі 0..1
+const constructing={};  // будівлі, що зводяться в режимі міста
+const cats={};          // живі коти на планеті
+let spring=0, cam=0, camTgt=0, follow=true, night=0, T=0;
+const parts=[];
+
+function stage(){return STAGES[Math.min(S.step,BUILD_MODE-1)]}
+function inBuild(){return S.step>=BUILD_MODE}
+function rate(){return inBuild()?0.5+S.owned.reduce((a,k)=>a+BUILD[k].rate,0):0}
+function hush(){chatterAt=Math.max(chatterAt,14)}
+
+/* стан світу виводиться зі сторінки сюжету — так збереження завжди узгоджене */
+function syncWorld(live){
+  const st=S.step,t=S.t;
+  prog.house=st===0?t/8*0.55:st===1?0.55+t/6*0.45:st>=2?1:0;
+  prog.fire=st>=3?1:0;
+  spring=st===4?t/5:st>=5?1:0;
+  prog.cafe=st===6?t/7:st>=7?1:0;
+  prog.cinema=st===7?t/7:st>=8?1:0;
+  prog.pier=st===9?t/6:st>=10?1:0;
+  for(const k of SHOP) if(!(k in constructing)) prog[k]=S.owned.includes(k)?1:0;
+  const present={murko:true,luna:st>=3,puh:st>=5,tin:st>=5,sem:st>=6,viktor:st>=7,taras:st>=9};
+  for(const k of SHOP) if(S.owned.includes(k)&&!(k in constructing)) present[BUILD[k].cat]=true;
+  for(const k in present) if(present[k]&&!cats[k]) spawn(k,live);
+}
+function spawn(k,walkIn){
+  const c=Object.assign({key:k,a:CATS[k].home,tgt:CATS[k].home,dir:1,speed:CATS[k].kitten?9:6.5,wait:0,walking:false,pet:0},CATS[k]);
+  if(walkIn){c.a=c.home+(Math.random()<.5?-1:1)*34;c.tgt=c.home;c.dir=c.tgt>c.a?1:-1;c.walking=true;}
+  else c.wait=rnd(1,4);
+  cats[k]=c;
+}
+function settled(){
+  let lo=-20,hi=20;
+  for(const k in BUILD) if(prog[k]>0){lo=Math.min(lo,BUILD[k].ang-14);hi=Math.max(hi,BUILD[k].ang+14);}
+  return [lo,hi];
+}
+
+/* ---------- інтерфейс ---------- */
+function say(who,text){
+  $("#who").textContent=who==="world"?"Котосвіт":who==="kits"?"Кошенята":CATS[who].name;
+  $("#line").textContent=text;
+}
+let toastT;
+function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove("show"),2600);}
+function focus(ang){camTgt=ang;follow=true;}
+function fmt(n){return n>=1000?(n/1000).toFixed(n>=10000?0:1)+"к":Math.floor(n)+""}
+
+function paint(){
+  const built=Object.keys(BUILD).filter(k=>prog[k]>=1&&k!=="fire").length;
+  $("#pop").textContent="коти "+Object.keys(cats).length;
+  $("#bld").textContent="будівлі "+built;
+  $("#fishc").classList.toggle("hidden",S.step<9);
+  $("#fishc").textContent="🐟 "+fmt(S.fish);
+  if(inBuild()){
+    $("#story").classList.add("hidden");$("#build").classList.remove("hidden");
+    $("#rate").textContent=rate().toFixed(1);
+    const nxt=SHOP.find(k=>!S.owned.includes(k));
+    $("#next").textContent=nxt&&S.fish<BUILD[nxt].cost?`до «${BUILD[nxt].name}» ще ${Math.ceil(BUILD[nxt].cost-S.fish)}`:"";
+    for(const k of SHOP){
+      const el=document.getElementById("card-"+k),b=BUILD[k],own=S.owned.includes(k);
+      el.classList.toggle("done",own);el.classList.toggle("ok",!own&&S.fish>=b.cost);
+      el.disabled=own||S.fish<b.cost;
+      el.querySelector(".c").textContent=own?(k in constructing?"будується…":"✓ збудовано"):"🐟 "+b.cost+" · +"+b.rate+"/с";
+    }
+  }else{
+    $("#story").classList.remove("hidden");$("#build").classList.add("hidden");
+    const s=stage();
+    $("#act").textContent=s.btn;$("#hint").textContent=s.hint;
+    $("#p").style.width=(S.t/s.need*100)+"%";
+  }
+  for(const k of ORDER){const e=document.getElementById("cast-"+k);e.classList.toggle("on",!!cats[k]);e.lastChild.textContent=cats[k]?CATS[k].name:"…";}
+}
+function buildShop(){
+  $("#shop").innerHTML=SHOP.map(k=>`<button class="card" id="card-${k}"><span class="n">${BUILD[k].name}</span><span class="r">прийде ${CATS[BUILD[k].cat].name}, ${CATS[BUILD[k].cat].role}</span><span class="c"></span></button>`).join("");
+  for(const k of SHOP) document.getElementById("card-"+k).onclick=()=>buy(k);
+  $("#cast").innerHTML=ORDER.map(k=>`<div class="who" id="cast-${k}"><canvas width="128" height="128"></canvas><div>…</div></div>`).join("");
+  for(const k of ORDER){
+    const el=document.getElementById("cast-"+k);
+    portrait(el.firstChild,CATS[k]);
+    el.onclick=()=>{
+      const c=cats[k];
+      if(!c){toast("Ще не в Котосвіті");return;}
+      focus(c.a);hush();say(k,c.lines[Math.floor(Math.random()*c.lines.length)]);
+    };
+  }
+}
+
+/* ---------- дії ---------- */
+function stageEnter(){
+  const s=stage();
+  say(s.who,s.line);
+  if(s.build) focus(BUILD[s.build].ang);
+  else if(s.who in CATS) focus(CATS[s.who].home);
+  else if(s.who==="kits") focus(0);
+}
+function tapStory(){
+  const s=stage();
+  hush();
+  S.t++;
+  if(S.step===4){S.clock+=.2;spring=S.t/5;}
+  if(s.build){const from=s.from||0;prog[s.build]=from+(s.to-from)*Math.min(1,S.t/s.need);spark(BUILD[s.build].ang,BUILD[s.build].h*prog[s.build]*.5,"#f0cf8a",4);}
+  if(S.t>=s.need){
+    S.t=0;S.step++;
+    if(S.step===3)toast("Луна йде стежкою");
+    if(S.step===6)toast("Кошенят назвали Пух і Тінь");
+    if(S.step===10)toast("Рибки тепер рахуються");
+    if(S.step===BUILD_MODE)toast("Місто у твоїх лапах");
+    syncWorld(true);
+    if(S.step<BUILD_MODE)stageEnter();else say("taras","Пірс готовий. Тапай «Закинути вудку» або гладь котів — і вирішуй, що будувати далі.");
+  }
+  paint();save(T);
+}
+function fishTap(fromAngle){
+  S.fish+=1;
+  spark(fromAngle==null?BUILD.pier.ang:fromAngle,6,"#9fd3ff",3);
+  paint();
+}
+function buy(k){
+  const b=BUILD[k];
+  if(S.owned.includes(k)||S.fish<b.cost)return;
+  S.fish-=b.cost;S.owned.push(k);constructing[k]=0;prog[k]=0;
+  focus(b.ang);hush();say("world",`Коти збирають дошки для «${b.name}»…`);
+  paint();save(T);
+}
+function finishBuild(k){
+  delete constructing[k];prog[k]=1;
+  const cat=BUILD[k].cat;spawn(cat,true);focus(CATS[cat].home);
+  hush();say(cat,CATS[cat].hello);toast(`${CATS[cat].name} тепер у Котосвіті`);
+  if(SHOP.every(x=>S.owned.includes(x)))setTimeout(()=>say("world",FINALE),9000);
+  paint();save(T);
+}
+function pet(c){
+  if(c.pet>0)return;
+  hush();
+  c.pet=2;c.wait=Math.max(c.wait,1.6);c.walking=false;
+  say(c.key,c.lines[Math.floor(Math.random()*c.lines.length)]);
+  hearts(c.a,c.kitten?22:34);
+  if(S.step>=9){const g=Math.max(1,Math.round(rate()));S.fish+=g;S.petted++;spark(c.a,10,"#9fd3ff",2);}
+  paint();
+}
+function reset(){
+  if(!confirm("Почати Котосвіт спочатку? Збереження зникне."))return;
+  allowSave=false;
+  localStorage.removeItem(KEY);localStorage.removeItem("kotoStep");
+  location.reload();
+}
+
+/* ---------- частинки ---------- */
+function spark(ang,h,col,n){for(let i=0;i<n;i++)parts.push({ang,h:h+rnd(-4,4),vx:rnd(-14,14),vy:rnd(10,40),life:rnd(.5,.9),col,r:rnd(1.5,3)});}
+function hearts(ang,h){for(let i=0;i<4;i++)parts.push({ang,h,vx:rnd(-10,10),vy:rnd(18,30),life:rnd(.9,1.3),col:"#ff8fa3",heart:true,r:4});}
+
+/* ---------- канвас ---------- */
+const cv=$("#cv"),ctx=cv.getContext("2d");
+let W=0,H=0,DPR=1,R=0,CX=0,CY=0;
+function resize(){
+  const r=cv.parentElement.getBoundingClientRect();W=r.width;H=r.height;DPR=Math.min(2,devicePixelRatio||1);
+  cv.width=W*DPR;cv.height=H*DPR;R=Math.min(W*.58,H*.52);CX=W/2;CY=H*.6+R;
+}
+addEventListener("resize",resize);
+const STARS=Array.from({length:90},()=>[Math.random(),Math.random()*.7,rnd(.4,1.3),Math.random()*TAU]);
+const BLOBS=[[-40,.78,.22],[25,.7,.16],[95,.75,.2],[-120,.72,.18],[170,.8,.14]];
+const DAY_T=[48,78,142],DAY_B=[212,146,104],NIGHT_T=[6,5,13],NIGHT_B=[36,24,40];
+function lerpC(a,b,t){return`rgb(${a.map((v,i)=>Math.round(v+(b[i]-v)*t)).join(",")})`}
+function onSurface(ang){const th=wrap(ang-cam)*D2R;return[CX+R*Math.sin(th),CY-R*Math.cos(th),th]}
+function visible(ang){return Math.abs(wrap(ang-cam))<84}
+function at(ang,fn){const[x,y,th]=onSurface(ang);ctx.save();ctx.translate(x,y);ctx.rotate(th);fn();ctx.restore();}
+function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(x,y,w,h);}
+function circ(x,y,r,c){ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();}
+function ell(x,y,rx,ry,c){ctx.fillStyle=c;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,TAU);ctx.fill();}
+function tri(a,b,c,col){ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.lineTo(...c);ctx.closePath();ctx.fill();}
+function glowCircle(x,y,r,col,a){const g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,col.replace("A",a));g.addColorStop(1,col.replace("A",0));ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();}
+function windowLight(x,y,w,h){ctx.fillStyle=`rgba(255,214,130,${night*.95})`;ctx.fillRect(x,y,w,h);glowCircle(x+w/2,y+h/2,w*2.2,"rgba(255,200,110,A)",night*.35);}
+
+const DRAW={
+  house(g){
+    if(g){windowLight(7,-34,11,11);windowLight(-18,-34,11,11);return;}
+    rect(-24,-42,48,42,"#b8865a");rect(-24,-42,48,3,"#8c6240");
+    tri([-30,-42],[30,-42],[0,-76],"#7a3f2a");rect(12,-70,7,14,"#5a3a2e");
+    rect(-6,-20,12,20,"#4b2a1c");circ(3,-10,1.2,"#e8b86d");
+    rect(7,-34,11,11,"#2a2538");rect(-18,-34,11,11,"#2a2538");
+    ctx.strokeStyle="#8c6240";ctx.lineWidth=1;ctx.strokeRect(7.5,-33.5,10,10);ctx.strokeRect(-17.5,-33.5,10,10);
+  },
+  fire(g,t){
+    const f=Math.sin(t*9)*.15+Math.sin(t*23)*.08;
+    if(g){glowCircle(0,-8,70,"rgba(255,150,60,A)",.28+night*.3+f*.3);
+      ctx.globalAlpha=.9;tri([-7,-4],[7,-4],[2+f*8,-22-f*20],"#ff9a3c");tri([-4,-4],[4,-4],[-1+f*6,-16-f*14],"#ffd27a");ctx.globalAlpha=1;return;}
+    ctx.strokeStyle="#5a3a2e";ctx.lineWidth=4;ctx.lineCap="round";
+    ctx.beginPath();ctx.moveTo(-10,-2);ctx.lineTo(10,-6);ctx.moveTo(-10,-6);ctx.lineTo(10,-2);ctx.stroke();
+    for(const x of[-14,14,0])circ(x+(x?0:-1),-1,3,"#6f6a66");
+  },
+  cafe(g){
+    if(g){windowLight(-20,-38,14,16);windowLight(8,-38,14,16);glowCircle(0,-62,30,"rgba(255,200,110,A)",night*.3);return;}
+    rect(-28,-46,56,46,"#c9a27a");rect(-28,-46,56,4,"#8c6240");
+    rect(-6,-24,12,24,"#4b2a1c");rect(-20,-38,14,16,"#2a2538");rect(8,-38,14,16,"#2a2538");
+    for(let i=0;i<7;i++)rect(-32+i*9.2,-54,9.2,9,i%2?"#f1e2cd":"#b33b3b");
+    tri([-32,-45],[32,-45],[0,-40],"#8c6240");
+    rect(-12,-70,24,14,"#f1e2cd");rect(-12,-70,24,2,"#8c6240");
+    rect(-6,-66,8,7,"#5b4636");ctx.strokeStyle="#5b4636";ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(3.5,-62.5,2.5,-1.3,1.3);ctx.stroke();
+    ctx.strokeStyle="#c9a27a";ctx.beginPath();ctx.moveTo(-5,-69);ctx.quadraticCurveTo(-3,-72,-5,-74);ctx.moveTo(-1,-69);ctx.quadraticCurveTo(1,-72,-1,-74);ctx.stroke();
+  },
+  cinema(g,t){
+    if(g){
+      for(let i=0;i<9;i++){const on=Math.floor(t*4+i)%3!==0;ctx.fillStyle=on?`rgba(255,230,160,${.5+night*.5})`:"rgba(120,90,60,.5)";ctx.beginPath();ctx.arc(-32+i*8,-72,1.6,0,TAU);ctx.fill();}
+      ctx.save();ctx.fillStyle=`rgba(255,150,120,${.45+night*.5})`;ctx.font="bold 11px Georgia";ctx.textAlign="center";ctx.fillText("КІНО",0,-60);ctx.restore();
+      glowCircle(0,-64,46,"rgba(255,140,110,A)",night*.35);
+      ctx.fillStyle=`rgba(255,235,200,${night*.8})`;ctx.fillRect(-9,-30,18,22);return;
+    }
+    rect(-32,-56,64,56,"#3b3650");rect(-32,-56,64,3,"#2a2538");
+    rect(-36,-76,72,20,"#6a3b4a");rect(-36,-76,72,3,"#2a2538");
+    rect(-10,-32,20,32,"#1b1826");rect(-9,-30,18,22,"#2a2538");
+    rect(-26,-44,10,14,"#2a2538");rect(16,-44,10,14,"#2a2538");
+    rect(-40,-84,80,8,"#2a2538");
+  },
+  pier(g,p,t){
+    if(p<=0)return;
+    const w=Math.sin(t*1.6)*1.5;
+    if(g){if(p>=1){glowCircle(44,-30,30,"rgba(255,210,130,A)",.2+night*.4);ctx.fillStyle=`rgba(255,220,150,${.6+night*.4})`;ctx.fillRect(42,-32,4,5);}return;}
+    ell(26,3,56,8,"#2f6f9e");ell(30,2,40,5,"#3f85b5");
+    ctx.strokeStyle="rgba(255,255,255,.35)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-8,2+w*.3);ctx.lineTo(10,2+w*.3);ctx.moveTo(30,4-w*.3);ctx.lineTo(50,4-w*.3);ctx.stroke();
+    if(p<=0)return;
+    const L=56*p;
+    for(let x=-12;x<-12+L;x+=10)rect(x,-10,8.5,4,"#9a7752");
+    for(let x=-6;x<-12+L;x+=22){ctx.strokeStyle="#6e5236";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,-10);ctx.lineTo(x,2);ctx.stroke();}
+    if(p>=1){rect(42,-26,4,16,"#6e5236");rect(40,-33,8,7,"#4b2a1c");rect(42,-32,4,5,"#e8b86d");
+      ctx.save();ctx.translate(66,w*.5);ell(0,0,11,3.5,"#8c3b2a");rect(-1,-12,1.5,12,"#4b2a1c");tri([1,-12],[1,-3],[8,-3],"#f1e2cd");ctx.restore();}
+  },
+  garden(g,p){
+    if(g||p<=0)return;
+    const rows=Math.ceil(p*3);
+    rect(-30,-3,60,4,"#5a3a2e");
+    for(let x=-32;x<=32;x+=8)rect(x,-7,2,7,"#b8865a");
+    rect(-33,-7,66,2,"#b8865a");
+    for(let r=0;r<rows;r++)for(let i=0;i<5;i++){const x=-24+i*12+r*2;
+      ell(x,-10-r*3,5,4+(p>=1?2:0),r%2?"#4f8f4a":"#6aa85a");if(p>=1&&r===1)circ(x,-16,1.6,i%2?"#e8554d":"#f1c86a");}
+    if(p>=1){rect(-1,-30,2,16,"#8c6240");circ(0,-30,3.5,"#f1e2cd");rect(-6,-27,12,2,"#8c6240");}
+  },
+  library(g){
+    if(g){windowLight(-20,-38,10,14);windowLight(10,-38,10,14);windowLight(-5,-38,10,14);return;}
+    rect(-34,-50,68,50,"#d8c2a8");rect(-34,-50,68,3,"#8c6240");
+    for(const x of[-28,-14,0,14,28])rect(x-2.5,-46,5,46,"#efe3d2");
+    rect(-20,-38,10,14,"#2a2538");rect(10,-38,10,14,"#2a2538");rect(-5,-38,10,14,"#2a2538");
+    tri([-38,-50],[38,-50],[0,-76],"#8c6240");rect(-6,-22,12,22,"#4b2a1c");
+    rect(-8,-66,16,10,"#f1e2cd");rect(-6,-64,5,6,"#b33b3b");rect(0,-64,5,6,"#2f6f9e");
+  },
+  lighthouse(g,t){
+    if(g){
+      ctx.fillStyle=`rgba(255,240,200,${.5+night*.5})`;ctx.fillRect(-7,-108,14,10);
+      if(night>.05){ctx.save();ctx.translate(0,-103);ctx.rotate(t*.9);ctx.globalAlpha=night*.3;
+        const gr=ctx.createLinearGradient(0,0,180,0);gr.addColorStop(0,"rgba(255,240,190,.9)");gr.addColorStop(1,"rgba(255,240,190,0)");
+        ctx.fillStyle=gr;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(180,-26);ctx.lineTo(180,26);ctx.closePath();ctx.fill();ctx.restore();}
+      glowCircle(0,-103,40,"rgba(255,240,190,A)",night*.5);return;
+    }
+    for(let i=0;i<6;i++){const y=-i*16,w=18-i*1.6;tri([-w,y],[w,y],[w-1.6,y-16],i%2?"#f1e2cd":"#b33b3b");tri([-w,y],[-w+1.6,y-16],[w-1.6,y-16],i%2?"#f1e2cd":"#b33b3b");}
+    rect(-11,-98,22,3,"#2a2538");rect(-7,-108,14,10,"#2a2538");for(const x of[-7,-1,5])rect(x,-108,1.5,10,"#2a2538");
+    tri([-10,-108],[10,-108],[0,-118],"#5a3a2e");rect(-5,-14,10,14,"#4b2a1c");
+  },
+  observatory(g,t){
+    if(g){ctx.fillStyle=`rgba(200,220,255,${night*.9})`;ctx.fillRect(-3,-78,6,22);windowLight(-16,-30,9,11);windowLight(7,-30,9,11);return;}
+    rect(-26,-46,52,46,"#8d93a6");rect(-26,-46,52,3,"#5b6070");
+    ctx.fillStyle="#c9ced9";ctx.beginPath();ctx.arc(0,-50,30,Math.PI,0);ctx.fill();
+    rect(-3,-80,6,30,"#2a2538");
+    ctx.save();ctx.translate(0,-56);ctx.rotate(-.9);rect(-3,-30,6,30,"#5b6070");rect(-4,-32,8,4,"#2a2538");ctx.restore();
+    rect(-16,-30,9,11,"#2a2538");rect(7,-30,9,11,"#2a2538");rect(-6,-18,12,18,"#4b2a1c");
+  },
+  hall(g,t){
+    if(g){for(const x of[-30,-14,2,18])windowLight(x,-50,10,12);glowCircle(0,-70,18,"rgba(255,220,150,A)",night*.35);return;}
+    rect(-40,-60,80,60,"#d9c4a0");rect(-40,-60,80,4,"#8c6240");
+    for(const x of[-30,-14,2,18])rect(x,-50,10,12,"#2a2538");
+    for(const x of[-36,-20,-4,12,28])rect(x,-36,6,36,"#efe3d2");
+    rect(-8,-24,16,24,"#4b2a1c");
+    rect(-14,-88,28,28,"#c9ad84");tri([-18,-88],[18,-88],[0,-98],"#7a3f2a");
+    circ(0,-70,7,"#f1e2cd");ctx.strokeStyle="#2a2538";ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(0,-70);ctx.lineTo(0,-75);ctx.moveTo(0,-70);ctx.lineTo(3.5,-68);ctx.stroke();
+    rect(-.5,-112,1,16,"#5a3a2e");const fl=Math.sin(t*5)*2;tri([0,-112],[12,-110+fl],[0,-105],"#e8b86d");
+  }
+};
+function drawBuilding(k,g,t){
+  const b=BUILD[k],p=prog[k]||0;
+  if(p<=0&&!b.custom)return;
+  at(b.ang,()=>{
+    if(b.custom){DRAW[k](g,p,t);return;}
+    ctx.save();
+    if(p<1){ctx.beginPath();ctx.rect(-90,-b.h*p-1,180,b.h*p+2);ctx.clip();}
+    DRAW[k](g,t);ctx.restore();
+  });
+}
+function drawTree(ang,kind,size,g){
+  if(g||spring<=0)return;
+  at(ang,()=>{ctx.scale(size*spring,size*spring);
+    rect(-2,-14,4,14,"#5a3a2e");
+    if(kind){tri([-13,-10],[13,-10],[0,-40],"#2f6a40");tri([-10,-22],[10,-22],[0,-48],"#3f7a4a");}
+    else{circ(0,-26,13,"#3f7a4a");circ(-8,-20,8,"#4f8f4a");circ(8,-21,8,"#366f45");}
+  });
+}
+function drawCat(c,t,g){
+  const s=c.kitten?0.62:1,bob=c.walking?Math.sin(t*12)*1.2:0;
+  if(g){if(night>.4&&!c.walking){at(c.a,()=>{ctx.scale(c.dir*s,s);ctx.fillStyle=`rgba(${c.eye==="#f1c86a"?"241,200,106":"160,220,255"},${(night-.4)*.9})`;ctx.beginPath();ctx.arc(14,-25,1.5,0,TAU);ctx.arc(18.5,-25,1.5,0,TAU);ctx.fill();});}return;}
+  at(c.a,()=>{
+    ctx.scale(c.dir*s,s);
+    ell(0,-1,11,2.4,"rgba(0,0,0,.28)");
+    ctx.strokeStyle=c.fur;ctx.lineWidth=3;ctx.lineCap="round";
+    for(let i=0;i<4;i++){const ph=c.walking?Math.sin(t*12+i*Math.PI/2)*4:0;ctx.beginPath();ctx.moveTo(-8+i*5.5,-10+bob);ctx.lineTo(-8+i*5.5+ph,0);ctx.stroke();}
+    ctx.lineWidth=3.5;ctx.beginPath();ctx.moveTo(-14,-14+bob);ctx.quadraticCurveTo(-24,-20+Math.sin(t*3+c.a)*3,-20,-32+Math.sin(t*2+c.a)*3);ctx.stroke();
+    ell(0,-15+bob,15,9,c.fur);ell(3,-11+bob,9,4,c.belly);
+    circ(12,-24+bob,8,c.fur);
+    tri([5,-28+bob],[8,-37+bob],[12,-30+bob],c.fur);tri([13,-31+bob],[17,-37+bob],[19,-28+bob],c.fur);
+    ell(14,-25+bob,1.8,c.pet>0?0.6:2.4,c.eye);ell(18.5,-25+bob,1.8,c.pet>0?0.6:2.4,c.eye);
+    tri([18.5,-21+bob],[20.5,-21+bob],[19.5,-19.5+bob],"#e08a8a");
+    ctx.strokeStyle="rgba(255,255,255,.5)";ctx.lineWidth=.7;ctx.beginPath();for(const dy of[-1,1]){ctx.moveTo(20,-20+bob);ctx.lineTo(27,-21+dy*2.5+bob);}ctx.stroke();
+  });
+}
+function portrait(cnv,c){
+  const x=cnv.getContext("2d");x.scale(2,2);
+  x.fillStyle="#1a120c";x.fillRect(0,0,64,64);
+  x.translate(32,38);x.scale(2.2,2.2);
+  x.fillStyle=c.fur;x.beginPath();x.arc(0,0,8,0,TAU);x.fill();
+  const t=(a,b,d)=>{x.beginPath();x.moveTo(...a);x.lineTo(...b);x.lineTo(...d);x.closePath();x.fill();};
+  t([-7,-4],[-4,-13],[0,-6]);t([1,-6],[5,-13],[7,-4]);
+  x.fillStyle="#e8b4b4";t([-5.2,-5],[-4,-11],[-1.3,-6]);t([1.6,-6],[4.4,-11],[5.6,-5]);
+  x.fillStyle=c.belly;x.beginPath();x.ellipse(0,3.5,4.5,3,0,0,TAU);x.fill();
+  x.fillStyle=c.eye;x.beginPath();x.ellipse(-3,-1,1.6,2.2,0,0,TAU);x.ellipse(3,-1,1.6,2.2,0,0,TAU);x.fill();
+  x.fillStyle="#111";x.beginPath();x.ellipse(-3,-1,.6,1.8,0,0,TAU);x.ellipse(3,-1,.6,1.8,0,0,TAU);x.fill();
+  x.fillStyle="#e08a8a";t([-1,2],[1,2],[0,3.2]);
+}
+
+/* ---------- кадр ---------- */
+let last=performance.now(),chatterAt=8,saveTimer=0;
+function frame(now){
+  if(paused){last=now;requestAnimationFrame(frame);return;}
+  const dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;
+  S.clock=(S.clock+dt/150)%1;
+  const sunEl=-Math.cos(TAU*S.clock);night=clamp(.5-sunEl*1.1,0,1);
+  if(inBuild()){S.fish+=rate()*dt;}
+  for(const k in constructing){constructing[k]+=dt/5;prog[k]=Math.min(1,constructing[k]);if(constructing[k]>=1)finishBuild(k);}
+  for(const k in cats){const c=cats[k];c.pet=Math.max(0,c.pet-dt);
+    if(c.wait>0){c.wait-=dt;if(c.wait<=0){const[lo,hi]=settled();c.tgt=Math.random()<.45?c.home+rnd(-10,10):rnd(lo,hi);}continue;}
+    const d=c.tgt-c.a;if(Math.abs(d)<.3){c.a=c.tgt;c.wait=rnd(2,6);c.walking=false;continue;}
+    c.dir=d>0?1:-1;c.a+=c.dir*c.speed*dt;c.walking=true;}
+  if(follow){const d=wrap(camTgt-cam);cam+=d*Math.min(1,dt*3.5);}
+  if(inBuild()){chatterAt-=dt;if(chatterAt<=0){chatterAt=rnd(10,18);const ks=Object.keys(cats),c=cats[ks[Math.floor(Math.random()*ks.length)]];say(c.key,c.lines[Math.floor(Math.random()*c.lines.length)]);}}
+  for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.life-=dt;p.h+=p.vy*dt;p.ang+=p.vx*dt/(R*D2R);if(p.life<=0)parts.splice(i,1);}
+  saveTimer+=dt;if(saveTimer>3){saveTimer=0;save(T);}
+  if(inBuild()&&Math.floor(T*4)!==Math.floor((T-dt)*4))paint();
+  render();
+  requestAnimationFrame(frame);
+}
+function render(){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,lerpC(DAY_T,NIGHT_T,night));sky.addColorStop(1,lerpC(DAY_B,NIGHT_B,night));
+  ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+  const th=TAU*S.clock-Math.PI,ORB=Math.min(W,H)*.78;
+  const sx=CX+ORB*Math.sin(th),sy=CY-R*.3-ORB*Math.cos(th);
+  if(sunEl()>-.2){glowCircle(sx,sy,120,"rgba(255,200,120,A)",.45*(1-night));circ(sx,sy,22,"#ffe6b0");}
+  // планета
+  const pg=ctx.createRadialGradient(CX,CY-R*.55,R*.1,CX,CY,R);pg.addColorStop(0,"#6f8f55");pg.addColorStop(.7,"#3e5e3a");pg.addColorStop(1,"#263d2b");
+  ctx.fillStyle=pg;ctx.beginPath();ctx.arc(CX,CY,R,0,TAU);ctx.fill();
+  ctx.save();ctx.beginPath();ctx.arc(CX,CY,R-1,0,TAU);ctx.clip();
+  for(const[a,d,s]of BLOBS){const[x,y]=onSurface(a);ell(CX+(x-CX)*d,CY+(y-CY)*d,R*s,R*s*.6,"rgba(40,70,45,.45)");}
+  ctx.restore();
+  ctx.strokeStyle="#7aa660";ctx.lineWidth=7;ctx.beginPath();ctx.arc(CX,CY,R-3,0,TAU);ctx.stroke();
+  // стежка між будівлями
+  const[lo,hi]=settled();
+  if(prog.house>=1&&hi>lo){
+    ctx.strokeStyle="rgba(201,162,122,.55)";ctx.lineWidth=2.5;ctx.setLineDash([5,7]);ctx.beginPath();
+    const steps=Math.max(2,Math.ceil((hi-lo)/6));
+    for(let i=0;i<=steps;i++){const[x,y]=onSurface(lo+(hi-lo)*i/steps);i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+    ctx.stroke();ctx.setLineDash([]);
+  }
+  for(const a of FLOWERS)if(spring>0&&visible(a))at(a,()=>{circ(0,-3*spring,1.6*spring,a%3?"#f1c86a":"#e8738a");});
+  for(const[a,k,s]of TREES)if(visible(a))drawTree(a,k,s,false);
+  for(const k in BUILD)if(visible(BUILD[k].ang))drawBuilding(k,false,T);
+  const list=Object.values(cats).filter(c=>visible(c.a)).sort((a,b)=>(a.kitten?1:0)-(b.kitten?1:0));
+  for(const c of list)drawCat(c,T,false);
+  // ніч
+  ctx.fillStyle=`rgba(6,5,14,${night*.5})`;ctx.fillRect(0,0,W,H);
+  if(night>0){for(const[fx,fy,r,ph]of STARS){const tw=.55+.45*Math.sin(T*1.5+ph);ctx.fillStyle=`rgba(255,245,225,${night*tw})`;ctx.beginPath();ctx.arc(fx*W,fy*H,r,0,TAU);ctx.fill();}}
+  const mx=CX-ORB*Math.sin(th),my=CY-R*.3+ORB*Math.cos(th);
+  if(sunEl()<.2){ctx.globalAlpha=clamp((.2-sunEl())*2,0,1);glowCircle(mx,my,70,"rgba(220,230,255,A)",.3);circ(mx,my,15,"#e9ecf5");circ(mx-5,my-3,4,"#cfd4e2");circ(mx+6,my+5,2.5,"#cfd4e2");ctx.globalAlpha=1;}
+  for(const k in BUILD)if(visible(BUILD[k].ang))drawBuilding(k,true,T);
+  for(const c of list)drawCat(c,T,true);
+  for(const p of parts){at(p.ang,()=>{ctx.globalAlpha=clamp(p.life,0,1);ctx.fillStyle=p.col;
+    if(p.heart){ctx.beginPath();ctx.moveTo(0,-p.h+3);ctx.bezierCurveTo(-5,-p.h-2,-2,-p.h-6,0,-p.h-3);ctx.bezierCurveTo(2,-p.h-6,5,-p.h-2,0,-p.h+3);ctx.fill();}
+    else{ctx.beginPath();ctx.arc(0,-p.h,p.r,0,TAU);ctx.fill();}ctx.globalAlpha=1;});}
+}
+function sunEl(){return -Math.cos(TAU*S.clock)}
+
+/* ---------- введення ---------- */
+let drag=null;
+cv.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,cam,moved:false};cv.setPointerCapture(e.pointerId);});
+cv.addEventListener("pointermove",e=>{if(!drag)return;const dx=e.clientX-drag.x;if(Math.abs(dx)>4||Math.abs(e.clientY-drag.y)>4){drag.moved=true;cv.classList.add("drag");follow=false;}
+  if(drag.moved)cam=drag.cam-dx/(R*D2R);});
+cv.addEventListener("pointerup",e=>{if(!drag)return;cv.classList.remove("drag");
+  if(!drag.moved){const r=cv.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;let best=null,bd=34;
+    for(const k in cats){const c=cats[k];if(!visible(c.a))continue;const[x,y]=onSurface(c.a);const d=Math.hypot(px-x,py-(y-16*(c.kitten?0.62:1)));if(d<bd){bd=d;best=c;}}
+    if(best)pet(best);else if(inBuild()){const dx=px-CX,dy=py-CY;if(Math.hypot(dx,dy)<R+90){const ang=cam+Math.atan2(dx,-dy)/D2R;fishTap(ang);}}}
+  drag=null;});
+cv.addEventListener("pointercancel",()=>{drag=null;cv.classList.remove("drag");});
+$("#act").onclick=tapStory;
+$("#fishbtn").onclick=()=>{fishTap();focus(BUILD.pier.ang);};
+$("#reset").onclick=reset;
+let paused=false;
+addEventListener("visibilitychange",()=>{
+  if(document.hidden){paused=true;save(T);return;}
+  const away=Math.min(6*3600,(Date.now()-S.seen)/1000);
+  if(inBuild()&&away>1){const got=away*rate();S.fish+=got;if(got>=5)toast(`Поки тебе не було, коти наловили ${fmt(got)} 🐟`);}
+  S.seen=Date.now();last=performance.now();paused=false;paint();
+});
+addEventListener("pagehide",()=>save(T));
+
+/* ---------- старт ---------- */
+resize();buildShop();syncWorld(false);
+if(inBuild()){
+  const away=Math.min(6*3600,(Date.now()-S.seen)/1000),got=away*rate();
+  if(got>=5){S.fish+=got;setTimeout(()=>toast(`Поки тебе не було, коти наловили ${fmt(got)} 🐟`),600);}
+  const nxt=SHOP.find(k=>!S.owned.includes(k));
+  if(!nxt)say("world",FINALE);else say("taras","З поверненням. Коти ловлять рибу, а місто чекає на твої рішення.");
+  cam=camTgt=0;
+}else{stageEnter();cam=camTgt;}
 paint();
+requestAnimationFrame(frame);
 </script>
 </body>
 </html>
